@@ -151,7 +151,7 @@ const AICIChatCompletion: ChatCompletionHandler = async (
     trace
 ) => {
     const { messages, response_format, tools } = req
-    const { requestOptions, partialCb } = options
+    const { requestOptions, progress } = options
     const { signal } = requestOptions || {}
     const { headers, ...rest } = requestOptions || {}
 
@@ -344,13 +344,12 @@ const AICIChatCompletion: ChatCompletionHandler = async (
             }
             return ""
         })
-        const progress = chatResp.slice(ch0.length)
-        if (progress != "") {
-            // logVerbose(`... ${progress.length} chars`);
-            partialCb?.({
+        const current = chatResp.slice(ch0.length)
+        if (current != "") {
+            progress.completion({
                 responseSoFar: chatResp,
                 tokensSoFar: numTokens,
-                responseChunk: progress,
+                responseChunk: current,
             })
         }
         pref = chunk

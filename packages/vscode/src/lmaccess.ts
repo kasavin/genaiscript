@@ -136,7 +136,7 @@ export async function configureLanguageModelAccess(
 ): Promise<void> {
     logVerbose("using copilot llm")
     const { template } = options
-    const { partialCb } = genOptions
+    const { progress } = genOptions
 
     const chatModel = (await vscode.lm.selectChatModels({ id: chatModelId }))[0]
 
@@ -197,7 +197,7 @@ export async function configureLanguageModelAccess(
             let text = ""
             for await (const fragment of request.stream) {
                 text += fragment
-                partialCb?.({
+                progress.completion({
                     responseSoFar: text,
                     responseChunk: fragment,
                     tokensSoFar: estimateTokens(model, text),

@@ -45,7 +45,7 @@ export const OpenAIChatCompletion: ChatCompletionHandler = async (
     const { temperature, top_p, seed, tools } = req
     const {
         requestOptions,
-        partialCb,
+        progress,
         maxCachedTemperature = MAX_CACHED_TEMPERATURE,
         maxCachedTopP = MAX_CACHED_TOP_P,
         cache: useCache,
@@ -83,7 +83,7 @@ export const OpenAIChatCompletion: ChatCompletionHandler = async (
     const { text: cached, finishReason: cachedFinishReason } =
         (cachedKey ? await cache.get(cachedKey) : undefined) || {}
     if (cached !== undefined) {
-        partialCb?.({
+        progress.completion({
             tokensSoFar: estimateTokens(model, cached),
             responseSoFar: cached,
             responseChunk: cached,
@@ -251,13 +251,13 @@ ${Object.entries(cfg.curlHeaders || {})
             }
             return ""
         })
-        const progress = chatResp.slice(ch0.length)
-        if (progress != "") {
+        const current = chatResp.slice(ch0.length)
+        if (current != "") {
             // logVerbose(`... ${progress.length} chars`);
-            partialCb?.({
+            progress.completion({
                 responseSoFar: chatResp,
                 tokensSoFar: numTokens,
-                responseChunk: progress,
+                responseChunk: current,
             })
         }
         pref = chunk
