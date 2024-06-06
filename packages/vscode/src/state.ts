@@ -32,6 +32,8 @@ import {
     DEFAULT_MODEL,
     resolveModelConnectionInfo,
     AI_REQUESTS_CACHE,
+    GenerationProgress,
+    ChildGenerationProgress,
 } from "genaiscript-core"
 import { ExtensionContext } from "vscode"
 import { VSCodeHost } from "./vshost"
@@ -125,7 +127,9 @@ export function snapshotAIRequest(r: AIRequest): AIRequestSnapshot {
 }
 
 function getAIRequestCache() {
-    return JSONLineCache.byName<AIRequestSnapshotKey, AIRequestSnapshot>(AI_REQUESTS_CACHE)
+    return JSONLineCache.byName<AIRequestSnapshotKey, AIRequestSnapshot>(
+        AI_REQUESTS_CACHE
+    )
 }
 
 export class ExtensionState extends EventTarget {
@@ -134,8 +138,10 @@ export class ExtensionState extends EventTarget {
     private _project: Project = undefined
     private _aiRequest: AIRequest = undefined
     private _diagColl: vscode.DiagnosticCollection
-    private _aiRequestCache: JSONLineCache<AIRequestSnapshotKey, AIRequestSnapshot> =
-        undefined
+    private _aiRequestCache: JSONLineCache<
+        AIRequestSnapshotKey,
+        AIRequestSnapshot
+    > = undefined
     readonly output: vscode.LogOutputChannel
 
     lastSearch: RetrievalSearchResult
@@ -319,15 +325,25 @@ ${errorMessage(e)}`
             }
         }
         trace.addEventListener(CHANGE, reqChange)
-        const partialCb = (progress: ChatCompletionsProgressReport) => {
-            r.progress = progress
-            if (r.response) {
-                r.response.text = progress.responseSoFar
-                if (/\n/.test(progress.responseChunk))
-                    r.response.annotations = parseAnnotations(r.response.text)
-            }
-            reqChange()
+        const progress: GenerationProgress = {
+            name: "",
+            id: "",
+            log: function (text: string): void {
+
+            },
+            completion: function (value: ChatCompletionsProgressReport): void {
+                r.progress = value
+                if (r.response) {
+                    r.response.text = value.responseSoFar
+                    if (/\n/.test(value.responseChunk))
+                        r.response.annotations = parseAnnotations(
+                            r.response.text
+                        )
+                }
+                reqChange()
+            },
         }
+
         this.aiRequest = r
         const { template, fragment } = options
         const { info, token: connectionToken } =
@@ -341,12 +357,8 @@ ${errorMessage(e)}`
         const genOptions: GenerationOptions = {
             requestOptions: { signal },
             cancellationToken,
-            partialCb,
             trace,
-            infoCb: (data) => {
-                r.response = data
-                reqChange()
-            },
+            progress,
             maxCachedTemperature,
             maxCachedTopP,
             vars: options.parameters,

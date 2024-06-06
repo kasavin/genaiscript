@@ -1,9 +1,17 @@
 import ora, { Ora } from "ora"
-import { Progress } from "genaiscript-core"
+import { ChatCompletionsProgressReport, ChildGenerationProgress, GenerationProgress, Progress } from "genaiscript-core"
 
-export class ProgressSpinner extends Progress {
+export class ProgressSpinner extends Progress, implements GenerationProgress {
     constructor(readonly spinner: Ora) {
         super()
+    }
+    name: string
+    id: string
+    log(text: string): void {
+        throw new Error("Method not implemented.")
+    }
+    completion(value: ChatCompletionsProgressReport): void {
+        throw new Error("Method not implemented.")
     }
 
     override report(value: {

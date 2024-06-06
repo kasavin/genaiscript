@@ -1,4 +1,8 @@
-import { ChatCompletionsOptions, LanguageModel } from "./chat"
+import {
+    ChatCompletionsOptions,
+    ChatCompletionsProgressReport,
+    LanguageModel,
+} from "./chat"
 import { HTMLEscape, arrayify, logVerbose } from "./util"
 import { host } from "./host"
 import { MarkdownTrace } from "./trace"
@@ -25,7 +29,7 @@ import { CancelError } from "./error"
 import { createFetch } from "./fetch"
 import { resolveFileDataUri } from "./file"
 import { XMLParse } from "./xml"
-import { GenerationStats } from "./expander"
+import { GenerationResult, GenerationStats } from "./expander"
 import { fuzzSearch } from "./fuzzsearch"
 
 function stringLikeToFileName(f: string | WorkspaceFile) {
@@ -281,21 +285,31 @@ export function createPromptContext(
     return ctx
 }
 
-export class GenerationProgress {
+export interface GenerationProgress {
+    name: string
+    id: string
+    log(text: string): void
+    completion(value: ChatCompletionsProgressReport): void
+}
+
+export class ChildGenerationProgress implements GenerationProgress {
     constructor(
-        readonly label: string,
-        readonly parent?: GenerationProgress
+        readonly parent: GenerationProgress,
+        readonly name: string
     ) {}
 
-    log(text: string): void {}
-
-    tokens(value: number): void {
-        this.parent?.tokens(value)
+    get id() {
+        const pid = this.parent.id
+        return pid ? pid + "/" + this.name : this.name
+    }
+    log(text: string): void {
+        this.parent.log(`${this.id}> ${text}`)
     }
 
-    startChild(label: string): GenerationProgress {
-        const child = new GenerationProgress(label, this)
-        return child
+    tokens(values: { delta: number }): void {}
+
+    completion(value: ChatCompletionsProgressReport): void {
+        this.parent.completion(value)
     }
 }
 

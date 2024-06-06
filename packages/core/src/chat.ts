@@ -4,7 +4,7 @@ import { MarkdownTrace } from "./trace"
 import { PromptImage } from "./promptdom"
 import { AICIRequest } from "./aici"
 import { LanguageModelConfiguration, host } from "./host"
-import { GenerationOptions } from "./promptcontext"
+import { ChildGenerationProgress, GenerationOptions } from "./promptcontext"
 import { JSON5TryParse, JSON5parse, isJSONObjectOrArray } from "./json5"
 import { CancellationToken, checkCancelled } from "./cancellation"
 import { assert } from "./util"
@@ -108,8 +108,12 @@ export interface ChatCompletionsProgressReport {
     responseChunk: string
 }
 
+export interface ChatCompletionProgress {
+    completion(value: ChatCompletionsProgressReport): void
+}
+
 export interface ChatCompletionsOptions {
-    partialCb?: (progres: ChatCompletionsProgressReport) => void
+    progress: ChatCompletionProgress
     requestOptions?: Partial<RequestInit>
     maxCachedTemperature?: number
     maxCachedTopP?: number
@@ -436,12 +440,13 @@ export function mergeGenerationOptions(
     options: GenerationOptions,
     runOptions: ModelOptions
 ): GenerationOptions {
+    assert(!!label)
     return {
         ...options,
         ...(runOptions || {}),
         model: runOptions?.model ?? options?.model ?? DEFAULT_MODEL,
         temperature: runOptions?.temperature ?? DEFAULT_TEMPERATURE,
-        progress: options.progress.startChild(label),
+        progress: new ChildGenerationProgress(options.progress, label),
     }
 }
 

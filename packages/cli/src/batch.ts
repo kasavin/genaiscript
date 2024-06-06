@@ -161,7 +161,7 @@ export async function batchScript(
                 logError(info.error)
                 process.exit(CONFIGURATION_ERROR_CODE)
             }
-            const progress = new GenerationProgress(undefined, undefined)
+            const progress: GenerationProgress
             const result: GenerationResult = await runTemplate(
                 prj,
                 script,
