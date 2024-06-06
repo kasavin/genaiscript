@@ -281,16 +281,30 @@ export function createPromptContext(
     return ctx
 }
 
+export class GenerationProgress {
+    constructor(
+        readonly label: string,
+        readonly parent?: GenerationProgress
+    ) {}
+
+    log(text: string): void {}
+
+    tokens(value: number): void {
+        this.parent?.tokens(value)
+    }
+
+    startChild(label: string): GenerationProgress {
+        const child = new GenerationProgress(label, this)
+        return child
+    }
+}
+
 export interface GenerationOptions
     extends ChatCompletionsOptions,
         ModelOptions,
         ScriptRuntimeOptions {
     cancellationToken?: CancellationToken
-    infoCb?: (partialResponse: {
-        text: string
-        label?: string
-        vars?: Partial<ExpansionVariables>
-    }) => void
+    progress: GenerationProgress
     trace: MarkdownTrace
     maxCachedTemperature?: number
     maxCachedTopP?: number

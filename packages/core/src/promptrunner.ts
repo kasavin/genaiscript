@@ -83,7 +83,7 @@ export async function runTemplate(
     assert(fragment !== undefined)
     assert(options !== undefined)
     assert(options.trace !== undefined)
-    const { skipLLM, label, cliInfo, trace } = options
+    const { skipLLM, label, cliInfo, trace, progress } = options
     const cancellationToken = options?.cancellationToken
     const version = CORE_VERSION
     const model = options.model
@@ -170,13 +170,7 @@ export async function runTemplate(
             maxTokens: max_tokens,
             topP: topP,
             seed: seed,
-        }
-        const updateStatus = (text?: string) => {
-            options.infoCb?.({
-                vars,
-                text,
-                label,
-            })
+            progress,
         }
 
         const fileEdits: Record<string, { before: string; after: string }> = {}
@@ -204,7 +198,7 @@ export async function runTemplate(
             return fileEdit
         }
 
-        updateStatus(`prompting model ${model}`)
+        progress.log(`prompting model ${model}`)
         const connection = await resolveModelConnectionInfo(
             { model },
             { trace, token: true }
@@ -449,11 +443,6 @@ export async function runTemplate(
             schemas,
             json,
         }
-        options?.infoCb?.({
-            label: res.label,
-            vars: res.vars,
-            text: undefined,
-        })
         return res
     } finally {
         await host.removeContainers()

@@ -148,11 +148,12 @@ export function createRunPromptContext(
             return undefined
         },
         runPrompt: async (generator, runOptions) => {
+            let genOptions: GenerationOptions
             try {
                 const { label } = runOptions || {}
                 trace.startDetails(`🎁 run prompt ${label || ""}`)
 
-                const genOptions = mergeGenerationOptions(options, runOptions)
+                genOptions = mergeGenerationOptions(label, options, runOptions)
                 const ctx = createRunPromptContext(genOptions, env, trace)
                 if (typeof generator === "string")
                     ctx.node.children.push(createTextNode(generator))
@@ -165,6 +166,7 @@ export function createRunPromptContext(
                 let functions: ChatFunctionCallback[] = undefined
                 let schemas: Record<string, JSONSchema> = undefined
                 // expand template
+                genOptions.progress.log(`prompting ${genOptions.model}`)
                 const { provider } = parseModelIdentifier(genOptions.model)
                 if (provider === MODEL_PROVIDER_AICI) {
                     const { aici } = await renderAICI("prompt", node)

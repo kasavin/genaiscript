@@ -23,6 +23,7 @@ import {
     logError,
     CONFIGURATION_ERROR_CODE,
     parseKeyValuePairs,
+    GenerationProgress,
 } from "genaiscript-core"
 import { basename, resolve, join, relative, dirname } from "node:path"
 import { appendFile, writeFile } from "node:fs/promises"
@@ -160,12 +161,13 @@ export async function batchScript(
                 logError(info.error)
                 process.exit(CONFIGURATION_ERROR_CODE)
             }
+            const progress = new GenerationProgress(undefined, undefined)
             const result: GenerationResult = await runTemplate(
                 prj,
                 script,
                 fragment,
                 {
-                    infoCb: () => {},
+                    progress,
                     partialCb: ({ tokensSoFar }) => {
                         tokens = tokensSoFar
                         spinner.report({ count: tokens })

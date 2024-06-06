@@ -187,7 +187,9 @@ export interface LanguageModelInfo {
     url?: string
 }
 
-export type ListModelsFunction = (cfg: LanguageModelConfiguration) => Promise<LanguageModelInfo[]>
+export type ListModelsFunction = (
+    cfg: LanguageModelConfiguration
+) => Promise<LanguageModelInfo[]>
 
 export interface LanguageModel {
     id: string
@@ -430,6 +432,7 @@ async function processChatMessage(
 }
 
 export function mergeGenerationOptions(
+    label: string,
     options: GenerationOptions,
     runOptions: ModelOptions
 ): GenerationOptions {
@@ -438,6 +441,7 @@ export function mergeGenerationOptions(
         ...(runOptions || {}),
         model: runOptions?.model ?? options?.model ?? DEFAULT_MODEL,
         temperature: runOptions?.temperature ?? DEFAULT_TEMPERATURE,
+        progress: options.progress.startChild(label),
     }
 }
 
