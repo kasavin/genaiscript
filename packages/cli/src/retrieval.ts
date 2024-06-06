@@ -8,7 +8,7 @@ import {
     normalizeFloat,
     fuzzSearch,
 } from "genaiscript-core"
-import { createProgressSpinner } from "./spinner"
+import { createProgressSpinner } from "./progress"
 
 export async function retrievalIndex(
     files: string[],

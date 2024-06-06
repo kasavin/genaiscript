@@ -11,7 +11,7 @@ import {
     estimateTokens,
     readText,
 } from "genaiscript-core"
-import { createProgressSpinner } from "./spinner"
+import { createProgressSpinner } from "./progress"
 import replaceExt from "replace-ext"
 import getStdin from "get-stdin"
 import { readFile } from "node:fs/promises"

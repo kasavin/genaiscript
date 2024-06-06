@@ -29,7 +29,7 @@ import { basename, resolve, join, relative, dirname } from "node:path"
 import { appendFile, writeFile } from "node:fs/promises"
 import { emptyDir, ensureDir } from "fs-extra"
 import { buildProject } from "./build"
-import { createProgressSpinner } from "./spinner"
+import { createProgressSpinner } from "./progress"
 
 export async function batchScript(
     tool: string,

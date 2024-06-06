@@ -42,7 +42,7 @@ import { isQuiet } from "./log"
 import { emptyDir, ensureDir } from "fs-extra"
 import { convertDiagnosticsToSARIF } from "./sarif"
 import { buildProject } from "./build"
-import { createProgressSpinner } from "./spinner"
+import { createConsoleProgress, createProgressSpinner } from "./progress"
 
 export async function runScript(
     tool: string,
@@ -106,13 +106,15 @@ export async function runScript(
     const removeOut = options.removeOut
     const cacheName = options.cacheName
 
-    const spinner =
+    const progress =
         !stream && !isQuiet
             ? createProgressSpinner(`preparing tools in ${process.cwd()}`)
-            : undefined
+            : createConsoleProgress({
+                  stream,
+                  quiet: !!isQuiet,
+              })
     const fail = (msg: string, exitCode: number) => {
-        if (spinner) spinner.fail(msg)
-        else logVerbose(msg)
+        progress.fail(msg)
         process.exit(exitCode)
     }
 
@@ -205,17 +207,7 @@ ${Array.from(files)
             process.exit(CONFIGURATION_ERROR_CODE)
         }
         res = await runTemplate(prj, script, fragment, {
-            infoCb: ({ text }) => {
-                if (text) {
-                    if (spinner) spinner.start(text)
-                    else if (!isQuiet) logVerbose(text)
-                }
-            },
-            partialCb: ({ responseChunk, tokensSoFar }) => {
-                tokens = tokensSoFar
-                if (stream && responseChunk) process.stdout.write(responseChunk)
-                if (spinner) spinner.report({ count: tokens })
-            },
+            progress,
             skipLLM,
             label,
             cache,
@@ -237,16 +229,16 @@ ${Array.from(files)
             },
         })
     } catch (err) {
-        if (spinner) spinner.fail()
+        progress.fail()
         if (isCancelError(err)) process.exit(USER_CANCELLED_ERROR_CODE)
         logError(err)
         process.exit(RUNTIME_ERROR_CODE)
     }
 
-    if (spinner) {
+    if (progress) {
         if (res.status !== "success")
-            spinner.fail(`${spinner.text}, ${res.statusText}`)
-        else spinner.succeed()
+            progress.fail(`${res.text}, ${res.statusText}`)
+        else progress.succeed()
     } else if (res.status !== "success")
         logVerbose(res.statusText ?? res.status)
 
@@ -411,6 +403,6 @@ ${Array.from(files)
         process.exit(ANNOTATION_ERROR_CODE)
     }
 
-    spinner?.stop()
+    progress?.stop()
     process.stderr.write("\n")
 }
