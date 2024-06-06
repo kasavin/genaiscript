@@ -54,10 +54,9 @@ export async function batchScript(
         vars: string[]
     }
 ) {
-    const spinner = createProgressSpinner("preparing tool and files")
+    const progress = createProgressSpinner("preparing tool and files")
     const fail = (msg: string, exitCode: number) => {
-        if (spinner) spinner.fail(msg)
-        else logVerbose(msg)
+        progress.fail(msg)
         process.exit(exitCode)
     }
 
@@ -129,7 +128,7 @@ export async function batchScript(
     )
     if (!script) throw new Error(`tool ${tool} not found`)
 
-    spinner.succeed(
+    progress.succeed(
         `tool: ${script.id} (${script.title}), files: ${specFiles.size}, out: ${resolve(out)}`
     )
 
@@ -144,12 +143,11 @@ export async function batchScript(
         const file = specFile.replace(GPSPEC_REGEX, "")
         const meta = { tool, file }
         try {
-            spinner.start(`${file} (${i + 1}/${specFiles.size})`)
+            progress.start(`${file} (${i + 1}/${specFiles.size})`)
             const fragment = prj.rootFiles.find(
                 (f) => resolve(f.filename) === resolve(specFile)
             ).fragments[0]
             assert(fragment !== undefined, `${specFile} not found`)
-            let tokens = 0
             const trace = new MarkdownTrace()
             trace.heading(2, fragment.file.filename)
             const { info } = await resolveModelConnectionInfo(script, {
@@ -161,17 +159,12 @@ export async function batchScript(
                 logError(info.error)
                 process.exit(CONFIGURATION_ERROR_CODE)
             }
-            const progress: GenerationProgress
             const result: GenerationResult = await runTemplate(
                 prj,
                 script,
                 fragment,
                 {
                     progress,
-                    partialCb: ({ tokensSoFar }) => {
-                        tokens = tokensSoFar
-                        spinner.report({ count: tokens })
-                    },
                     skipLLM: false,
                     label,
                     cache,
@@ -242,12 +235,12 @@ export async function batchScript(
 
             if (result.status !== "success") {
                 if (result.status === "cancelled")
-                    spinner.warn(`${spinner.text}, ${result.statusText}`)
+                    progress.warn(`${progress.text}, ${result.statusText}`)
                 else {
                     errors++
-                    spinner.fail(`${spinner.text}, ${result.statusText}`)
+                    progress.fail(`${progress.text}, ${result.statusText}`)
                 }
-            } else spinner.succeed()
+            } else progress.succeed()
 
             totalTokens += tokens
 
@@ -275,10 +268,10 @@ export async function batchScript(
                 [{ error: errorMessage(e) + "\n" + e.stack }],
                 meta
             )
-            spinner.fail(`${spinner.text}, ${e.error}`)
+            progress.fail(`${progress.text}, ${e.error}`)
         }
     }
 
-    spinner.stop()
+    progress.stop()
     if (errors) process.exit(GENERATION_ERROR_CODE)
 }

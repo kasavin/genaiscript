@@ -44,19 +44,19 @@ export async function parseHTMLToText(file: string) {
 }
 
 export async function jsonl2json(files: string[]) {
-    const spinner = createProgressSpinner(`converting...`)
+    const progress = createProgressSpinner(`converting...`)
     for (const file of await expandFiles(files)) {
-        spinner.report({ message: file })
+        progress.report({ message: file })
         if (!isJSONLFilename(file)) {
-            spinner.report({ succeeded: false })
+            progress.report({ succeeded: false })
             continue
         }
         const objs = await readJSONL(file)
         const out = replaceExt(file, ".json")
         await writeText(out, JSON.stringify(objs, null, 2))
-        spinner.report({ succeeded: true })
+        progress.report({ succeeded: true })
     }
-    spinner.stop()
+    progress.stop()
 }
 
 export async function parseTokens(
